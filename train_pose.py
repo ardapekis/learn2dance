@@ -33,7 +33,8 @@ def main():
 
     # Instantiate Models
     # embed = nn.Embedding(num_classes, num_classes)
-    embed = OneHot(num_classes, device)
+    # embed = OneHot(num_classes, device)
+    embed = None
     pose_dim = num_joints * 2
 
     pose_gen = DataParallel(PoseGenerator(embed, pose_z_dim, pose_dim))
@@ -58,8 +59,9 @@ def main():
             # Pose discriminator
             pose_dsc.zero_grad()
             pose_z = torch.randn(batch_size, pose_z_dim, device=device)
-            fake_classes = torch.randint(num_classes, size=(batch_size,))
-            fake_poses = pose_gen(pose_z, fake_classes)
+            # fake_classes = torch.randint(num_classes, size=(batch_size,))
+            fake_classes = None
+            fake_poses = pose_gen(pose_z, None)
 
             real_validity = pose_dsc(real_poses, classes)
             fake_validity = pose_dsc(fake_poses.detach(), fake_classes)
@@ -74,7 +76,7 @@ def main():
             # Pose generator
             pose_gen.zero_grad()
             pose_z = torch.randn(batch_size, pose_z_dim, device=device)
-            fake_classes = torch.randint(num_classes, size=(batch_size,))
+            # fake_classes = torch.randint(num_classes, size=(batch_size,))
             fake_poses = pose_gen(pose_z, fake_classes)
             fake_validity = pose_dsc(fake_poses, fake_classes)
             gen_loss = -torch.mean(fake_validity)
@@ -90,8 +92,9 @@ def main():
             if iter % show_interval == 0:
                 pose_gen.eval()
                 pose_z = torch.randn(1, pose_z_dim, device=device)
-                single_classes = torch.full((1,), 0, device=device,
-                                            dtype=int)
+                # single_classes = torch.full((1,), 0, device=device,
+                #                             dtype=int)
+                single_classes = None
                 fake_pose = pose_gen(pose_z, single_classes).detach().squeeze()
                 fake_pose = fake_pose.view(-1, 2)
                 pose_plot(fake_pose, savepath=f'vis/pose/gen{iter}.png',
