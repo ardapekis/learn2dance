@@ -18,13 +18,15 @@ BONE_LIST = [
     [8, 12], [12, 13], [13, 14]
 ]
 
-def pose_plot(pose, show=True, pause=None):
+def pose_plot(pose, show=True, pause=None, savepath=None):
     for i, j in BONE_LIST:
         plt.plot([pose[i, 0], pose[j, 0]], [pose[i, 1], pose[j, 1]], color='b')
-    # plt.scatter(pose[:, 0], pose[:, 1], color='blue')
+    plt.scatter(pose[:, 0], pose[:, 1], color='blue')
     plt.gca().set_aspect('equal', adjustable='box')
     for i, coordinate in enumerate(pose):
         plt.annotate(i, coordinate, fontsize=10)
+    if savepath is not None:
+        plt.savefig(savepath)
     if show:
         if pause is None:
             plt.show()
@@ -71,15 +73,15 @@ def get_fake_x(num_timesteps=50, batch_size=100, eps=0.03):
     return poses, classes
 
 class Poses(Dataset):
-    def __init__(self, poses, labels):
-        self.poses = poses.reshape(-1, poses.shape[-1])
-        self.labels = labels.repeat(poses.shape[1])
+    def __init__(self, poses, labels=None):
+        self.poses = poses
+        # self.labels = labels.repeat(poses.shape[1])
 
     def __getitem__(self, idx):
-        return self.poses[idx].astype(np.float32), int(self.labels[idx])
+        return self.poses[idx].astype(np.float32), 0
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.poses)
 
 class SeqPoses(Dataset):
     def __init__(self, poses, labels, length=50):
