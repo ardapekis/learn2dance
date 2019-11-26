@@ -11,7 +11,7 @@ def main():
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    batch_size = 200
+    batch_size = 800
     filenames = glob.glob(path.join(datadir, '*.npz'))
     list_poses = []
     for filename in filenames:
@@ -91,28 +91,28 @@ def main():
 
             if iter % show_interval == 0:
                 pose_gen.eval()
-                pose_z = torch.randn(1, pose_z_dim, device=device)
+                # pose_z = torch.randn(1, pose_z_dim, device=device)
                 # single_classes = torch.full((1,), 0, device=device,
                 #                             dtype=int)
-                single_classes = None
-                fake_pose = pose_gen(pose_z, single_classes).detach().squeeze()
-                fake_pose = fake_pose.view(-1, 2)
+                # single_classes = None
+                # fake_pose = pose_gen(pose_z, single_classes).detach().squeeze()
+                fake_pose = fake_poses[0].view(-1, 2).cpu().detach()
                 pose_plot(fake_pose, savepath=f'vis/pose/gen{iter}.png',
                           show=False)
                 pose_gen.train()
 
             if iter % save_interval == 0:
                 torch.save(pose_gen.state_dict(),
-                           path.join(model_path, f'pose_gen{iter}.pt'))
+                           path.join(model_path, f'gen/pose_gen{iter}.pt'))
                 torch.save(pose_dsc.state_dict(),
-                           path.join(model_path, f'pose_dsc{iter}.pt'))
+                           path.join(model_path, f'dsc/pose_dsc{iter}.pt'))
 
             iter += 1
 
     torch.save(pose_gen.state_dict(), path.join(model_path,
-                                                'pose_gen.pt'))
+                                                'gen/pose_gen.pt'))
     torch.save(pose_dsc.state_dict(), path.join(model_path,
-                                                'pose_dsc.pt'))
+                                                'dsc/pose_dsc.pt'))
 
 
 if __name__ == '__main__':
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     log_interval = 100
     show_interval = 1000
     save_interval = 500
-    model_path = 'models/'
+    model_path = 'models/pose'
     datadir = 'data/parsed'
 
     main()

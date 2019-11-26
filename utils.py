@@ -19,6 +19,7 @@ BONE_LIST = [
 ]
 
 def pose_plot(pose, show=True, pause=None, savepath=None):
+    plt.figure()
     for i, j in BONE_LIST:
         plt.plot([pose[i, 0], pose[j, 0]], [pose[i, 1], pose[j, 1]], color='b')
     plt.scatter(pose[:, 0], pose[:, 1], color='blue')
@@ -112,7 +113,7 @@ def block(in_feat, out_feat, normalize=True, leaky=True, dropout=False):
 
 def gradient_penalty(dsc, real, fake, fake_classes, device):
     batch_size = real.size(0)
-    alpha = torch.rand((batch_size, 1))
+    alpha = torch.rand((batch_size, 1), device=device)
 
     interpolates = (alpha * real + (1 - alpha) * fake).requires_grad_(True)
     labels = torch.full((batch_size,), 0, device=device)
