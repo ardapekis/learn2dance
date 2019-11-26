@@ -1,7 +1,8 @@
 from models import *
 from utils import *
+import glob
+from torch.nn import DataParallel
 from tqdm import tqdm
-import argparse
 from torch import optim
 from torch.utils.data import DataLoader
 
@@ -10,16 +11,20 @@ def main():
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    # poses, labels = get_fake_x(num_timesteps, 100)
-    data = np.load(data_file, allow_pickle=True)
-    poses = data['poses']
-    poses = translate(poses, 8)
-    poses = poses.reshape(1, poses.shape[0], -1)
-    labels = np.zeros(1)
-    train_loader = DataLoader(Poses(poses, labels), batch_size=100,
+    batch_size = 200
+    filenames = glob.glob(path.join(datadir, '*.npz'))
+    list_poses = []
+    for filename in filenames:
+        data = np.load(filename, allow_pickle=True)
+        poses = data['poses']
+        poses = translate(poses, 8)
+        poses = poses.reshape(poses.shape[0], -1)
+        list_poses.append(poses)
+    all_poses = np.concatenate(list_poses, axis=0)
+    train_loader = DataLoader(Poses(all_poses), batch_size=batch_size,
                               shuffle=True)
-    num_classes = len(np.unique(labels))
-    num_joints = poses.shape[2] // 2
+    num_classes = 1
+    num_joints = all_poses.shape[1] // 2
 
     if torch.cuda.is_available() and num_gpu > 0:
         device = torch.device('cuda:0')
@@ -31,8 +36,8 @@ def main():
     embed = OneHot(num_classes)
     pose_dim = num_joints * 2
 
-    pose_gen = PoseGenerator(embed, pose_z_dim, pose_dim)
-    pose_dsc = PoseDiscriminator(embed, pose_dim)
+    pose_gen = DataParallel(PoseGenerator(embed, pose_z_dim, pose_dim))
+    pose_dsc = DataParallel(PoseDiscriminator(embed, pose_dim))
     pose_gen.train()
     pose_dsc.train()
 
@@ -86,7 +91,8 @@ def main():
                                             dtype=int)
                 fake_pose = pose_gen(pose_z, single_classes).detach().squeeze()
                 fake_pose = fake_pose.view(-1, 2)
-                pose_plot(fake_pose)
+                pose_plot(fake_pose, savepath=f'vis/pose/gen{iter}.png',
+                          show=False)
                 pose_gen.train()
 
             if iter % save_interval == 0:
@@ -117,11 +123,12 @@ if __name__ == '__main__':
     init_epoch = 0
     epochs = 50
     lambda_gp = 10
-    log_interval = 10
+    log_interval = 100
     show_interval = 2000
-    save_interval = 100
+    save_interval = 500
     data_file = 'data/poses.npz'
     model_path = 'models/'
+    datadir = 'data/parsed'
 
     main()
 
