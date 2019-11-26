@@ -138,40 +138,6 @@ class OneHot:
         hot = torch.zeros(*classes.shape, self.embedding_dim)
         return hot.scatter_(-1, classes.unsqueeze(-1), 1)
 
-def parse(dirname, savepath, num_joints=15):
-    filenames = sorted(glob.glob(path.join(dirname, '*.json')))
-    poses = np.zeros([len(filenames), num_joints, 2])
-    confidences = np.zeros([len(filenames), num_joints])
-    prev_pose = None
-
-    for i, filename in enumerate(filenames):
-        with open(filename) as json_file:
-            people = json.load(json_file)['people']
-        if len(people) > 1:
-            print(i, len(people))
-        if len(people) == 0:
-            print(i, len(people))
-            pose = poses[i-1, :]
-        else:
-            points = np.array(people[0]['pose_keypoints_2d']).reshape(-1, 3)[:num_joints]
-            pose = -points[:, :2]
-            confidence = points[:, -1]
-            confidences[i, :] = confidence
-
-        prev_pose = pose if prev_pose is None else prev_pose
-        poses[i] = pose
-        poses[i, confidence < 0.25] = prev_pose[confidence < 0.25]
-        prev_pose = poses[i]
-    np.savez(savepath, confidences=confidences, poses=poses)
-
-    diff = poses[1:] - poses[:-1]
-    dist = np.linalg.norm(diff, axis=2)
-
-    for i in range(num_joints):
-        plt.plot(dist[:1000, i])
-        plt.plot(confidences[:1000, i] * 400)
-        plt.show()
-
 def animate(poses, savename, fps=30):
     camera = Camera(plt.figure())
     for pose in poses:
