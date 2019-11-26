@@ -19,7 +19,6 @@ BONE_LIST = [
 ]
 
 def pose_plot(pose, show=True, pause=None, savepath=None):
-    plt.figure()
     for i, j in BONE_LIST:
         plt.plot([pose[i, 0], pose[j, 0]], [pose[i, 1], pose[j, 1]], color='b')
     plt.scatter(pose[:, 0], pose[:, 1], color='blue')
@@ -85,15 +84,9 @@ class Poses(Dataset):
         return len(self.poses)
 
 class SeqPoses(Dataset):
-    def __init__(self, all_poses, labels, length=50):
-        total = 0
-        lensum = [0]
-        for poses in all_poses:
-            total += poses.shape[0] - length
-            lensum.append(total)
-        self.lensum = lensum
-        self.lengths = [poses.shape[0] for poses in all_poses]
-        self.all_poses = all_poses
+    def __init__(self, list_poses, labels, length=50):
+        self.lengths = [poses.shape[0] - length for poses in list_poses]
+        self.list_poses = list_poses
         # self.labels = labels.repeat(poses.shape[1])
         self.length = length
 
@@ -102,8 +95,9 @@ class SeqPoses(Dataset):
         while self.lengths[batch_idx] <= idx:
             idx -= self.lengths[batch_idx]
             batch_idx += 1
-        return self.all_poses[batch_idx][idx:idx + self.length].astype(
-            np.float32), 0
+        poses = self.list_poses[batch_idx]
+        section = poses[idx:idx + self.length].astype(np.float32)
+        return section, 0
 
     def __len__(self):
         return sum(self.lengths)

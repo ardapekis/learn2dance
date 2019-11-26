@@ -8,6 +8,8 @@ from torch.utils.data import DataLoader
 
 
 def main():
+    torch.manual_seed(seed)
+    np.random.seed(seed)
 
     # poses, labels = get_fake_x(num_timesteps, 100)
     batch_size = 200
@@ -19,10 +21,9 @@ def main():
         poses = translate(poses, 8)
         poses = poses.reshape(poses.shape[0], -1)
         list_poses.append(poses)
-    all_poses = np.concatenate(list_poses, axis=0)
-    train_loader = DataLoader(SeqPoses(all_poses, None), batch_size=batch_size,
+    train_loader = DataLoader(SeqPoses(list_poses, None), batch_size=batch_size,
                               shuffle=True)
-    num_joints = all_poses.shape[1] // 2
+    num_joints = list_poses[0].shape[-1] // 2
 
     if torch.cuda.is_available() and num_gpu > 0:
         device = torch.device('cuda:0')
@@ -42,8 +43,8 @@ def main():
 
 
     # TODO: make model checkpoint a param.
-    pose_gen.load_state_dict(torch.load('models/pose/gen/pose_gen.pt'))
-    pose_dsc.load_state_dict(torch.load('models/pose/dsc/pose_dsc.pt'))
+    pose_gen.load_state_dict(torch.load('models/pose/gen/pose_gen0.pt'))
+    pose_dsc.load_state_dict(torch.load('models/pose/dsc/pose_dsc0.pt'))
     pose_gen.eval()
     pose_dsc.eval()
     seq_gen = DataParallel(SeqGenerator(embed, num_timesteps - 1, pose_z_dim,
@@ -69,6 +70,7 @@ def main():
 
             batch_size = real_poses.shape[0]
             real_poses = real_poses.to(device)
+            classes = None
 
             # Seq discriminator
             seq_dsc.zero_grad()
@@ -134,6 +136,7 @@ def main():
             iter += 1
 
 if __name__ == '__main__':
+    seed = 0
     num_timesteps = 50
     seq_z_dim = 100
     pose_z_dim = 100

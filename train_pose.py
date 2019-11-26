@@ -97,6 +97,7 @@ def main():
                 # single_classes = None
                 # fake_pose = pose_gen(pose_z, single_classes).detach().squeeze()
                 fake_pose = fake_poses[0].view(-1, 2).cpu().detach()
+                plt.figure()
                 pose_plot(fake_pose, savepath=f'vis/pose/gen{iter}.png',
                           show=False)
                 pose_gen.train()
