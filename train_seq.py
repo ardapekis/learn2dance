@@ -1,7 +1,7 @@
 from models import *
 from utils import *
 from torch.nn import DataParallel
-from tqdm import tqdm
+from tqdm import tqdm, trange
 import argparse
 from torch import optim
 from torch.utils.data import DataLoader
@@ -41,8 +41,9 @@ def main():
     pose_dsc.to(device)
 
 
-    pose_gen.load_state_dict(torch.load('models/pose_gen.pt'))
-    pose_dsc.load_state_dict(torch.load('models/pose_dsc.pt'))
+    # TODO: make model checkpoint a param.
+    pose_gen.load_state_dict(torch.load('models/pose/gen/pose_gen.pt'))
+    pose_dsc.load_state_dict(torch.load('models/pose/dsc/pose_dsc.pt'))
     pose_gen.eval()
     pose_dsc.eval()
     seq_gen = DataParallel(SeqGenerator(embed, num_timesteps - 1, pose_z_dim,
@@ -86,8 +87,6 @@ def main():
             loss_real = bce(real_validity, real_labels)
             loss_fake = bce(fake_validity, fake_labels)
             loss_dsc = loss_real + loss_fake
-            # loss_real.backward()
-            # loss_fake.backward()
             loss_dsc.backward()
             optim_seq_dsc.step()
 
@@ -112,8 +111,15 @@ def main():
                            f'Loss Gen: {loss_gen.item(): 7.3f}')
 
             if iter % anim_interval == 0:
-                animate(fake_seq_pose[0].view(-1, 15, 2).detach().numpy(),
+                animate(fake_seq_pose[0].view(-1, 15, 2).cpu().detach().numpy(),
                         f'vis/anim_{iter}.mp4')
+
+            if iter % save_interval == 0:
+                torch.save(seq_gen.state_dict(),
+                           path.join(model_path, f'gen/seq_gen{iter}.pt'))
+                torch.save(seq_dsc.state_dict(),
+                           path.join(model_path, f'dsc/seq_dsc{iter}.pt'))
+
 
             # if iter % show_interval == 0:
             #     pose_gen.eval()
@@ -143,7 +149,9 @@ if __name__ == '__main__':
     log_interval = 10
     show_interval = 50
     anim_interval = 10
+    save_interval = 500
     datadir = 'data/parsed'
+    model_path = 'models/seq'
 
     main()
 
