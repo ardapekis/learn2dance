@@ -132,12 +132,13 @@ def gradient_penalty(dsc, real, fake, fake_classes, device):
     return penalty
 
 class OneHot:
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, device):
         self.num_classes = num_classes
         self.embedding_dim = num_classes
+        self.device = device
 
     def __call__(self, classes):
-        hot = torch.zeros(*classes.shape, self.embedding_dim)
+        hot = torch.zeros(*classes.shape, self.embedding_dim, device=self.device)
         return hot.scatter_(-1, classes.unsqueeze(-1), 1)
 
 def animate(poses, savename, fps=30):

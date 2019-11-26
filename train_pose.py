@@ -33,11 +33,14 @@ def main():
 
     # Instantiate Models
     # embed = nn.Embedding(num_classes, num_classes)
-    embed = OneHot(num_classes)
+    embed = OneHot(num_classes, device)
     pose_dim = num_joints * 2
 
     pose_gen = DataParallel(PoseGenerator(embed, pose_z_dim, pose_dim))
     pose_dsc = DataParallel(PoseDiscriminator(embed, pose_dim))
+    pose_gen.to(device)
+    pose_dsc.to(device)
+    print('device: ', device)
     pose_gen.train()
     pose_dsc.train()
 
@@ -119,14 +122,13 @@ if __name__ == '__main__':
     num_hidden = 10
     lr = 0.001
     betas = (0.5, 0.999)
-    num_gpu = 0
+    num_gpu = 4
     init_epoch = 0
     epochs = 50
     lambda_gp = 10
     log_interval = 100
-    show_interval = 2000
+    show_interval = 1000
     save_interval = 500
-    data_file = 'data/poses.npz'
     model_path = 'models/'
     datadir = 'data/parsed'
 
