@@ -1,23 +1,28 @@
 from models import *
 from utils import *
+from torch.nn import DataParallel
 from tqdm import tqdm
 import argparse
 from torch import optim
 from torch.utils.data import DataLoader
 
 
-def main(args):
+def main():
 
     # poses, labels = get_fake_x(num_timesteps, 100)
-    data = np.load('data/poses.npz', allow_pickle=True)
-    poses = data['poses']
-    poses = translate(poses, 8)
-    poses = poses.reshape(1, poses.shape[0], -1)
-    labels = np.zeros(1)
-    train_loader = DataLoader(SeqPoses(poses, labels), batch_size=100,
+    batch_size = 200
+    filenames = glob.glob(path.join(datadir, '*.npz'))
+    list_poses = []
+    for filename in filenames:
+        data = np.load(filename, allow_pickle=True)
+        poses = data['poses']
+        poses = translate(poses, 8)
+        poses = poses.reshape(poses.shape[0], -1)
+        list_poses.append(poses)
+    all_poses = np.concatenate(list_poses, axis=0)
+    train_loader = DataLoader(SeqPoses(all_poses, None), batch_size=batch_size,
                               shuffle=True)
-    num_classes = len(np.unique(labels))
-    num_joints = poses.shape[2] // 2
+    num_joints = all_poses.shape[1] // 2
 
     if torch.cuda.is_available() and num_gpu > 0:
         device = torch.device('cuda:0')
@@ -26,19 +31,26 @@ def main(args):
 
     # Instantiate Models
     # embed = nn.Embedding(num_classes, num_classes)
-    embed = OneHot(num_classes)
+    # embed = OneHot(num_classes)
+    embed = None
     pose_dim = num_joints * 2
 
-    pose_gen = PoseGenerator(embed, pose_z_dim, pose_dim)
-    pose_dsc = PoseDiscriminator(embed, pose_dim)
+    pose_gen = DataParallel(PoseGenerator(embed, pose_z_dim, pose_dim))
+    pose_dsc = DataParallel(PoseDiscriminator(embed, pose_dim))
+    pose_gen.to(device)
+    pose_dsc.to(device)
 
 
     pose_gen.load_state_dict(torch.load('models/pose_gen.pt'))
     pose_dsc.load_state_dict(torch.load('models/pose_dsc.pt'))
     pose_gen.eval()
     pose_dsc.eval()
-    seq_gen = SeqGenerator(embed, num_timesteps - 1, pose_z_dim, seq_z_dim)
-    seq_dsc = SeqDiscriminator(embed, pose_dim, hidden_dim, num_layers)
+    seq_gen = DataParallel(SeqGenerator(embed, num_timesteps - 1, pose_z_dim,
+                                        seq_z_dim))
+    seq_dsc = DataParallel(SeqDiscriminator(embed, pose_dim, hidden_dim,
+                                            num_layers))
+    seq_gen.to(device)
+    seq_dsc.to(device)
     seq_gen.train()
     seq_dsc.train()
 
@@ -51,8 +63,8 @@ def main(args):
     bce = nn.BCELoss()
 
     iter = 0
-    for epoch in range(init_epoch, epochs):
-        for i, (real_poses, classes) in enumerate(train_loader):
+    for epoch in trange(init_epoch, epochs):
+        for i, (real_poses, _) in enumerate(train_loader):
 
             batch_size = real_poses.shape[0]
             real_poses = real_poses.to(device)
@@ -61,7 +73,8 @@ def main(args):
             seq_dsc.zero_grad()
             pose_z = torch.randn(batch_size, pose_z_dim, device=device)
             seq_z = torch.randn(batch_size, seq_z_dim, device=device)
-            fake_classes = torch.randint(num_classes, size=(batch_size,))
+            # fake_classes = torch.randint(num_classes, size=(batch_size,))
+            fake_classes = None
             _, fake_seq_z = seq_gen(pose_z, seq_z, fake_classes)
             fake_seq_pose = pose_gen(fake_seq_z, fake_classes)
 
@@ -82,7 +95,7 @@ def main(args):
             seq_gen.zero_grad()
             pose_z = torch.randn(batch_size, pose_z_dim, device=device)
             seq_z = torch.randn(batch_size, seq_z_dim, device=device)
-            fake_classes = torch.randint(num_classes, size=(batch_size,))
+            # fake_classes = torch.randint(num_classes, size=(batch_size,))
             fake_seq_dz, fake_seq_z = seq_gen(pose_z, seq_z, fake_classes)
             fake_seq_pose = pose_gen(fake_seq_z, fake_classes)
             fake_validity = seq_dsc(fake_seq_pose, fake_classes)
@@ -123,18 +136,14 @@ if __name__ == '__main__':
     num_hidden = 10
     lr = 0.001
     betas = (0.5, 0.999)
-    num_gpu = 0
+    num_gpu = 4
     init_epoch = 0
     epochs = 50
     lambda_mse = 0.01
     log_interval = 10
     show_interval = 50
     anim_interval = 10
+    datadir = 'data/parsed'
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--boards-file', type=str, default='data/boards.npz')
-    parser.add_argument('--ae-model', type=str, default='models/ae.pt')
-    parser.add_argument('--ae-iter', type=int)
-    parser.add_argument('--model-dirname', type=str, default='models')
+    main()
 
-    main(parser.parse_args())

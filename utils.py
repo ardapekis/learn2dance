@@ -85,19 +85,28 @@ class Poses(Dataset):
         return len(self.poses)
 
 class SeqPoses(Dataset):
-    def __init__(self, poses, labels, length=50):
-        self.poses = poses.reshape(-1, poses.shape[-1])
-        self.labels = labels.repeat(poses.shape[1])
-        if len(self.poses) <= length:
-            raise ValueError()
+    def __init__(self, all_poses, labels, length=50):
+        total = 0
+        lensum = [0]
+        for poses in all_poses:
+            total += poses.shape[0] - length
+            lensum.append(total)
+        self.lensum = lensum
+        self.lengths = [poses.shape[0] for poses in all_poses]
+        self.all_poses = all_poses
+        # self.labels = labels.repeat(poses.shape[1])
         self.length = length
 
     def __getitem__(self, idx):
-        return self.poses[idx:idx+self.length].astype(np.float32), \
-               int(self.labels[idx])
+        batch_idx = 0
+        while self.lengths[batch_idx] <= idx:
+            idx -= self.lengths[batch_idx]
+            batch_idx += 1
+        return self.all_poses[batch_idx][idx:idx + self.length].astype(
+            np.float32), 0
 
     def __len__(self):
-        return len(self.labels) - self.length
+        return sum(self.lengths)
 
 
 def block(in_feat, out_feat, normalize=True, leaky=True, dropout=False):
