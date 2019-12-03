@@ -12,9 +12,9 @@
 3. Run `Process_Waves.ipynb`. This will save music features, extracted with librosa.
 
 ## Training and Evaluation
-For training:
+### For training:
 Run `train.py` or use `Model.ipynb`. This will train and save the model.
-For evaluation:
+### For evaluation:
 Run `eval.py` or use `Model.ipynb`. This will save an animation of the predicted dance.
 
 # Advice for Future Work
