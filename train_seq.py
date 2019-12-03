@@ -37,16 +37,12 @@ def main():
     pose_dim = num_joints * 2
 
     pose_gen = DataParallel(PoseGenerator(embed, pose_z_dim, pose_dim))
-    pose_dsc = DataParallel(PoseDiscriminator(embed, pose_dim))
     pose_gen.to(device)
-    pose_dsc.to(device)
 
 
     # TODO: make model checkpoint a param.
-    pose_gen.load_state_dict(torch.load('models/pose/gen/pose_gen0.pt'))
-    pose_dsc.load_state_dict(torch.load('models/pose/dsc/pose_dsc0.pt'))
+    pose_gen.load_state_dict(torch.load('models/pose_gen0.pt'))
     pose_gen.eval()
-    pose_dsc.eval()
     seq_gen = DataParallel(SeqGenerator(embed, num_timesteps - 1, pose_z_dim,
                                         seq_z_dim))
     seq_dsc = DataParallel(SeqDiscriminator(embed, pose_dim, hidden_dim,
@@ -115,6 +111,7 @@ def main():
             if iter % anim_interval == 0:
                 animate(fake_seq_pose[0].view(-1, 15, 2).cpu().detach().numpy(),
                         f'vis/anim_{iter}.mp4')
+                np.savez()
 
             if iter % save_interval == 0:
                 torch.save(seq_gen.state_dict(),

@@ -1,5 +1,6 @@
 import torch
 import glob
+from tqdm import tqdm
 from celluloid import Camera
 import json
 from torch import nn, autograd
@@ -9,6 +10,37 @@ from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
+def gradient_penalty(dsc, real, fake, fake_classes, device):
+    batch_size = real.size(0)
+    alpha = torch.rand((batch_size, 1), device=device)
+
+    interpolates = (alpha * real + (1 - alpha) * fake).requires_grad_(True)
+    labels = torch.full((batch_size,), 0, device=device)
+    validity = dsc(interpolates, fake_classes)  # todo: add classes
+
+    gradients = autograd.grad(
+        outputs=validity,
+        inputs=interpolates,
+        grad_outputs=labels,
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True,
+    )[0]
+
+    gradients = gradients.view(gradients.size(0), -1)
+    penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    return penalty
+
+class OneHot:
+    def __init__(self, num_classes, device):
+        self.num_classes = num_classes
+        self.embedding_dim = num_classes
+        self.device = device
+
+    def __call__(self, classes):
+        hot = torch.zeros(*classes.shape, self.embedding_dim, device=self.device)
+        return hot.scatter_(-1, classes.unsqueeze(-1), 1)
+
 BONE_LIST = [
     [0, 1],
     [1, 2], [2, 3], [3, 4],
@@ -17,6 +49,20 @@ BONE_LIST = [
     [8, 9], [9, 10], [10, 11],
     [8, 12], [12, 13], [13, 14]
 ]
+
+def animate(poses, savename, fps=30):
+    """
+    Animates the poses and saves to savename.
+    :param poses: np.array of size (T, 15, 2)
+    """
+    camera = Camera(plt.figure())
+    for pose in tqdm(poses):
+        pose_plot(pose, show=False)
+        camera.snap()
+    anim = camera.animate(blit=True)
+    plt.rcParams['animation.ffmpeg_path'] = '/usr/local/bin/ffmpeg'
+    writer = animation.FFMpegWriter(fps=fps)
+    anim.save(savename, writer=writer)
 
 def pose_plot(pose, show=True, pause=None, savepath=None):
     for i, j in BONE_LIST:
@@ -114,44 +160,5 @@ def block(in_feat, out_feat, normalize=True, leaky=True, dropout=False):
 
 
 
-def gradient_penalty(dsc, real, fake, fake_classes, device):
-    batch_size = real.size(0)
-    alpha = torch.rand((batch_size, 1), device=device)
 
-    interpolates = (alpha * real + (1 - alpha) * fake).requires_grad_(True)
-    labels = torch.full((batch_size,), 0, device=device)
-    validity = dsc(interpolates, fake_classes)  # todo: add classes
-
-    gradients = autograd.grad(
-        outputs=validity,
-        inputs=interpolates,
-        grad_outputs=labels,
-        create_graph=True,
-        retain_graph=True,
-        only_inputs=True,
-    )[0]
-
-    gradients = gradients.view(gradients.size(0), -1)
-    penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-    return penalty
-
-class OneHot:
-    def __init__(self, num_classes, device):
-        self.num_classes = num_classes
-        self.embedding_dim = num_classes
-        self.device = device
-
-    def __call__(self, classes):
-        hot = torch.zeros(*classes.shape, self.embedding_dim, device=self.device)
-        return hot.scatter_(-1, classes.unsqueeze(-1), 1)
-
-def animate(poses, savename, fps=30):
-    camera = Camera(plt.figure())
-    for pose in poses:
-        pose_plot(pose, show=False)
-        camera.snap()
-    anim = camera.animate(blit=True)
-    plt.rcParams['animation.ffmpeg_path'] = '/usr/local/bin/ffmpeg'
-    writer = animation.FFMpegWriter(fps=fps)
-    anim.save(savename, writer=writer)
 
