@@ -17,6 +17,20 @@ Run `train.py` or use `Model.ipynb`. This will train and save the model.
 ### For evaluation:
 Run `eval.py` or use `Model.ipynb`. This will save an animation of the predicted dance.
 
+# Using the GAN Model
+We based our GAN model off of this [paper](https://arxiv.org/abs/1711.08682).
+
+## Data format
+You will require data in the format of numpy arrays of size `(number of timesteps, num_joints, 2)`. If you run [OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) to get a sequence of joints, then you can simply run `parse.py` to parse the `.json` files into np arrays.
+
+## Training
+* Training happens in two steps: (1) training the pose GAN; (2) training the pose-sequence GAN.
+1. Pose GAN: run `train_pose.py` with `datadir` as a parameter specifying where the `.npz` files are at (each file corresponding to a dance sequence).
+2. Sequence GAN: run `train_seq.py` again with the `datadir` parameter.
+
+## Animating poses
+To visualize a pose sequence, run `animate.py`.
+
 # Advice for Future Work
 
 The most obvious task would be to get a higher accuracy with the results, and collecting and training on more data would definitely help with that. In addition, it may be a good idea to focus on one specific type of dance or song category, and attempt to collect data that specifically relates to that one type of dance, such as hip-hop, and get good results on that before including other categories. We may have been a bit ambitious with this project and better results may be obtained by training the model category-wise. 
