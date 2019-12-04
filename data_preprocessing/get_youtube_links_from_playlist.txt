@@ -1,0 +1,12 @@
+$Playlist = ((Invoke-WebRequest "[playlist_link]").Links | Where {$_.class -match "playlist-video"}).href
+
+ForEach ($Video in $Playlist) {
+$s = "https://www.youtube.com" + $Video
+$s  = $s.Substring(0, $s.IndexOf('&'))
+    Write-Output ($s)
+}
+
+
+to the get the playlist link you need to go to the playlist and right click and copy the link for the play button of the playlist. An example link is as follows:
+
+https://www.youtube.com/watch?v=X75sP1uRgCM&list=PLkE-NVsP02dNT2luUIzZCCo737mdg7rhg

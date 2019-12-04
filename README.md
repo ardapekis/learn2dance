@@ -2,7 +2,14 @@
 
 <https://github.com/ardapekis/learn2dance>
 
-*insert how to use code here*
+
+#Gathering data
+
+1. Find the desired playlist
+2. Use the `get_youtube_links_from_playlist.txt` for the Powershell script to get the list of individual links. use the following youtube video for reference https://www.youtube.com/watch?v=iiZPMJbM4zk
+3. Then use the output of the shell script as input to the `convertToString.py`. This will conveniently make an array of the youtube videos in the playlist.
+4. Take the output array and paste into `downloadVideoAudio.py`. This will then download the video create an audio track on the computer. **WARNING: if video is private you will not be able to download it**
+5. Then trim videos if needed by `trimVideo.py`
 
 # Using the Discriminative Model
 
@@ -36,9 +43,9 @@ To visualize a pose sequence, run `animate.py`.
 ## Discriminative Model
 ![](temp4.gif)
 ## GAN Model
-### 20 iterations 
+### 20 iterations
 ![](anim_20.gif)
-### 130 iterations 
+### 130 iterations
 ![](anim_130.gif)
 ### 540 iterations
 ![](anim_540.gif)
@@ -46,6 +53,6 @@ To visualize a pose sequence, run `animate.py`.
 
 # Advice for Future Work
 
-The most obvious task would be to get a higher accuracy with the results, and collecting and training on more data would definitely help with that. In addition, it may be a good idea to focus on one specific type of dance or song category, and attempt to collect data that specifically relates to that one type of dance, such as hip-hop, and get good results on that before including other categories. There is ongoing research at Georgia Tech (https://www.cc.gatech.edu/cpl/projects/dance/) that focuses on specific dance categories and obtaining their dataset would have helped us achieve faster and better results. With respect to the models, we may have been a bit ambitious with this project and better results may be obtained by training the model category-wise. 
+The most obvious task would be to get a higher accuracy with the results, and collecting and training on more data would definitely help with that. In addition, it may be a good idea to focus on one specific type of dance or song category, and attempt to collect data that specifically relates to that one type of dance, such as hip-hop, and get good results on that before including other categories. There is ongoing research at Georgia Tech (https://www.cc.gatech.edu/cpl/projects/dance/) that focuses on specific dance categories and obtaining their dataset would have helped us achieve faster and better results. With respect to the models, we may have been a bit ambitious with this project and better results may be obtained by training the model category-wise.
 
 But above all - have fun with this! We enjoyed working on this project and it was a lot of fun, regardless of the results. We all learned a lot and who knows? Maybe you'll even learn2dance a little :D
