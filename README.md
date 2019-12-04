@@ -36,9 +36,12 @@ To visualize a pose sequence, run `animate.py`.
 ## Discriminative Model
 ![](temp4.gif)
 ## GAN Model
-
-
-
+### 20 iterations 
+![](anim_20.gif)
+### 130 iterations 
+![](anim_130.gif)
+### 540 iterations
+![](anim_540.gif)
 
 
 # Advice for Future Work
