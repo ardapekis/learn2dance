@@ -3,7 +3,7 @@
 <https://github.com/ardapekis/learn2dance>
 
 
-#Gathering data
+# Gathering data
 
 1. Find the desired playlist
 2. Use the `get_youtube_links_from_playlist.txt` for the Powershell script to get the list of individual links. use the following youtube video for reference https://www.youtube.com/watch?v=iiZPMJbM4zk
